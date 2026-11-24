@@ -150,8 +150,8 @@ Bagi yang ingin menjalankan proyek ini di komputer lokal:
 
 1. **Clone Repository:**
    ```bash
-   git clone https://github.com/allam1768/Nongkrong.id.git
-   cd Nongkrong.id
+   git clone https://github.com/allam1768/project-NongkrongID-allampermataputra-260558302016.git
+   cd project-NongkrongID-allampermataputra-260558302016
    ```
 
 2. **Install Dependensi PHP & Node.js:**
@@ -225,8 +225,8 @@ Duration: ~10s
 ## 👨‍💻 8. Identitas Mahasiswa
 
 * **Nama:** Allam Permata Putra
-* **NIM:** *(Sesuai NIM Mahasiswa)*
-* **Program Studi / Kelas:** Teknik Informatika / Sistem Informasi — Semester 1
+* **NIM:** 260558302016
+* **Program Studi / Kelas:** Teknik Informatika — Semester 1
 * **Mata Kuliah:** Pemrograman Web / Dasar Pemrograman Web
 * **Dosen Pengampu:** *(Sesuai Dosen Mata Kuliah)*
 
