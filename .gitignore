@@ -30,5 +30,16 @@ Thumbs.db
 /progress.md
 /task_plan.md
 
+# AI & Agent Files / Skills
+/.agents/
+/.claude/
+/.github/
+/Hermes_data/
+/AGENTS.md
+/CLAUDE.md
+/boost.json
+/.mcp.json
+*.pptx
+
 /public/qrcodes/*
 !/public/qrcodes/.gitkeep
