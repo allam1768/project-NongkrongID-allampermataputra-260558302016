@@ -29,19 +29,32 @@ class AiBaristaController extends Controller
             tableNumber: $validated['table_number'] ?? null,
         );
 
-        if (!empty($response['recommendations']) && is_array($response['recommendations'])) {
+        $aiText = $response['text'] ?? ($response['message'] ?? '');
+
+        if (!empty($aiText)) {
             $tableId = null;
             if (!empty($validated['table_number'])) {
                 $tableId = \App\Models\Table::where('table_number', $validated['table_number'])->value('id');
             }
 
-            \App\Models\AiConsultation::create([
-                'table_id' => $tableId,
-                'user_prompt' => $validated['message'],
-                'ai_response' => $response['message'] ?? '',
-                'recommended_ids' => collect($response['recommendations'])->pluck('id')->filter()->values()->all(),
-                'is_converted' => false,
-            ]);
+            $recommendedIds = [];
+            if (!empty($response['menuId'])) {
+                $recommendedIds[] = (int) $response['menuId'];
+            } elseif (!empty($response['recommendations']) && is_array($response['recommendations'])) {
+                $recommendedIds = collect($response['recommendations'])->pluck('id')->filter()->map(fn($v) => (int) $v)->values()->all();
+            }
+
+            try {
+                \App\Models\AiConsultation::create([
+                    'table_id' => $tableId,
+                    'user_prompt' => $validated['message'],
+                    'ai_response' => $aiText,
+                    'recommended_ids' => !empty($recommendedIds) ? $recommendedIds : null,
+                    'is_converted' => false,
+                ]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Failed saving AiConsultation: ' . $e->getMessage());
+            }
         }
 
         return response()->json($response);

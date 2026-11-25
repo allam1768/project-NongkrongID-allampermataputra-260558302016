@@ -248,7 +248,7 @@ class AdminTable extends Component
             });
         }
 
-        $tables = $query->orderBy('table_number', 'asc')->get();
+        $tables = $query->orderByRaw('LENGTH(table_number) ASC, table_number ASC')->orderBy('id', 'asc')->get();
 
         return view('livewire.admin.AdminTable', [
             'tables' => $tables,

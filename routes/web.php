@@ -62,6 +62,9 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/tables', AdminTable::class)->name('admin.tables');
     Route::get('/tables/{table}/download-sticker', function (\App\Models\Table $table) {
         $path = \App\Services\QrCodeService::generateStickerForTable($table);
+        if (! \Illuminate\Support\Facades\File::exists($path)) {
+            \App\Services\QrCodeService::generateStickerWithGd($path, $table->table_number, (string) ($table->access_code ?: '7K92A'), null);
+        }
         $safeName = \Illuminate\Support\Str::slug($table->table_number);
         return response()->download($path, "stiker-meja-{$safeName}.png");
     })->name('admin.tables.download-sticker');

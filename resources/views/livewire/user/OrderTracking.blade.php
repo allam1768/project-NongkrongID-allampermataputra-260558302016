@@ -1,5 +1,5 @@
 <div
-    wire:poll.10s="refreshStatus"
+    wire:poll.4s="refreshStatus"
     x-data="{
         openMidtrans(token) {
             const pay = (t) => {

@@ -26,7 +26,11 @@ class AiBaristaService
      */
     protected function resolveLocal9RouterKey(): ?string
     {
-        $home = $_SERVER['HOME'] ?? getenv('HOME') ?: '/home/puutraa';
+        $home = $_SERVER['HOME'] ?? getenv('HOME') ?: (getenv('USERPROFILE') ?: null);
+        if (! $home) {
+            return null;
+        }
+
         $sqlitePath = "{$home}/.9router/db/data.sqlite";
         if (file_exists($sqlitePath)) {
             try {

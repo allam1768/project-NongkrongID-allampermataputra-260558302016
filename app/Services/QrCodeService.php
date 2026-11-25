@@ -82,6 +82,18 @@ class QrCodeService
             Log::warning('QrCodeService generateForTable failed: '.$e->getMessage());
         }
 
+        // Pure PHP/HTTP fallback if python3 is unavailable
+        try {
+            $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='.urlencode($targetUrl);
+            $imgData = @file_get_contents($qrUrl);
+            if ($imgData && strlen($imgData) > 100) {
+                File::put($filePath, $imgData);
+                return asset("qrcodes/{$filename}").'?v='.time();
+            }
+        } catch (\Throwable $e) {
+            Log::debug('QrCodeService online QR fallback failed: '.$e->getMessage());
+        }
+
         return 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='.urlencode($targetUrl);
     }
 
@@ -200,9 +212,85 @@ PY;
                 return $filePath;
             }
         } catch (\Throwable $e) {
-            Log::warning('generateStickerForTable failed: '.$e->getMessage());
+            Log::warning('generateStickerForTable python failed: '.$e->getMessage());
         }
 
-        return $qrPath;
+        // Pure PHP GD fallback if python3/PIL is not installed
+        if (self::generateStickerWithGd($filePath, $table->table_number, (string) ($table->access_code ?: '7K92A'), $qrPath)) {
+            return $filePath;
+        }
+
+        return File::exists($qrPath) ? $qrPath : $filePath;
+    }
+
+    /**
+     * Generate table sticker PNG using native PHP GD library (zero-dependency).
+     */
+    public static function generateStickerWithGd(string $filePath, string $tableNumber, string $accessCode, ?string $qrPath): bool
+    {
+        if (! extension_loaded('gd')) {
+            return false;
+        }
+
+        try {
+            $width = 600;
+            $height = 760;
+            $img = imagecreatetruecolor($width, $height);
+            if (! $img) {
+                return false;
+            }
+
+            // Colors
+            $white = imagecolorallocate($img, 255, 255, 255);
+            $navy = imagecolorallocate($img, 15, 23, 42);
+            $slateLight = imagecolorallocate($img, 241, 245, 249);
+            $slateBorder = imagecolorallocate($img, 203, 213, 225);
+            $slateText = imagecolorallocate($img, 100, 116, 139);
+            $brandBlue = imagecolorallocate($img, 0, 74, 173);
+
+            imagefilledrectangle($img, 0, 0, $width, $height, $white);
+
+            // Outer border
+            imagesetthickness($img, 6);
+            imagerectangle($img, 16, 16, $width - 16, $height - 16, $navy);
+
+            // Header brand text
+            imagestring($img, 5, 235, 50, 'NONGKRONG.ID', $brandBlue);
+
+            // Table Title
+            $titleText = 'MEJA ' . $tableNumber;
+            imagestring($img, 5, 255, 100, $titleText, $navy);
+
+            // QR frame
+            imagesetthickness($img, 2);
+            imagerectangle($img, 140, 150, 460, 470, $navy);
+
+            // Embed QR image if available
+            if ($qrPath && File::exists($qrPath)) {
+                $qrImg = @imagecreatefrompng($qrPath) ?: @imagecreatefromstring((string) File::get($qrPath));
+                if ($qrImg) {
+                    imagecopyresampled($img, $qrImg, 150, 160, 0, 0, 300, 300, imagesx($qrImg), imagesy($qrImg));
+                    imagedestroy($qrImg);
+                }
+            }
+
+            // Instructions
+            imagestring($img, 4, 175, 510, 'Pindai QR untuk Pesan & Bayar', $navy);
+            imagestring($img, 2, 165, 535, 'Arahkan kamera HP Anda ke barcode di atas', $slateText);
+
+            // Access Code box
+            imagefilledrectangle($img, 80, 580, 520, 680, $slateLight);
+            imagerectangle($img, 80, 580, 520, 680, $slateBorder);
+            imagestring($img, 3, 160, 605, 'ATAU MASUKKAN 5 DIGIT KODE MEJA:', $slateText);
+            imagestring($img, 5, 275, 635, $accessCode, $navy);
+
+            $saved = imagepng($img, $filePath);
+            imagedestroy($img);
+
+            return $saved && File::exists($filePath);
+        } catch (\Throwable $e) {
+            Log::warning('generateStickerWithGd failed: '.$e->getMessage());
+            return false;
+        }
     }
 }
